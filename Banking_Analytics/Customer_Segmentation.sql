@@ -2,16 +2,16 @@
 
 WITH customer_metrics AS (SELECT c.customer_id, c.first_name, c.last_name,
         COUNT(DISTINCT a.account_id) AS num_accounts,
-        SUM(a.balance) AS total_balance,
         COUNT(t.transaction_id) AS num_transactions,
         SUM(CASE WHEN t.transaction_type = 'DEPOSIT' THEN t.amount ELSE 0 END) AS total_deposits,
         SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE 0 END) AS total_withdrawals,
+        SUM(CASE WHEN t.transaction_type = 'DEPOSIT' THEN t.amount ELSE 0 END) - SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE 0 END) AS total_balance,
         DATE_DIFF('day', MAX(t.transaction_date), CURRENT_DATE) AS days_since_last_activity
     FROM customers c
     LEFT JOIN accounts a ON c.customer_id = a.customer_id
     LEFT JOIN transactions t ON a.account_id = t.account_id
     WHERE t.transaction_date >= CURRENT_DATE - INTERVAL '12 months'
-    GROUP BY c.customer_id, c.first_name, c.last_name)
+    GROUP BY 1, 2, 3)
 
 SELECT customer_id, first_name, last_name, num_accounts, total_balance, num_transactions, total_deposits, total_withdrawals, days_since_last_activity,
     CASE
